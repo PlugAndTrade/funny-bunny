@@ -3,6 +3,19 @@ const amqp = require('amqplib'),
       messageSerializing = require('./message-serializing'),
       R = require('ramda');
 
+function enqueuePromised(chan) {
+  return new Promise((resolve, reject) => {
+    try {
+      chan.sendToQueue.apply(chan, R.tail(arguments))
+        ? resolve()
+        : chan.once('drain', () => resolve());
+    } catch (err) {
+      reject(err);
+    }
+  }
+  );
+};
+
 const skipMessages = (chan, count) => {
   if (count <= 0) {
     return Promise.resolve(true);
@@ -55,8 +68,18 @@ class RabbitMqClient {
     return this.message;
   }
 
+  enqueueMessage(msg, queue) {
+    return this.connection
+      .then(chan => enqueuePromised(chan, queue, R.pipe(messageSerializing.serialize, messageCoding.encode)(msg.content), msg.properties));
+  }
+
   getMessage() {
     return this.message;
+  }
+
+  ack(msg) {
+    return this.connection
+      .then(chan => chan.ack(msg));
   }
 }
 

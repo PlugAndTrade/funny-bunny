@@ -19,7 +19,7 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
 
   vorpal
     .command('print')
-    .description('Print the last fetched message')
+    .description('Print current message')
     .action((args, cb) => {
       return rabbitMqClient
         .getMessage()
@@ -39,6 +39,27 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
           } else {
             console.log('Queue empty');
           }
+        });
+    });
+
+  vorpal
+    .command('retry')
+    .description('Retry current message')
+    .action((args, cb) => {
+      return rabbitMqClient
+        .getMessage()
+        .then(msg => {
+          if (R.complement(R.pathSatisfies(R.has('x-death'), [ 'properties', 'headers' ]))(msg)) {
+            console.log('Not dead letter');
+            return Promise.resolve();
+          }
+
+          return rabbitMqClient
+            .enqueueMessage(
+              msg,
+              R.path([ 'properties', 'headers', 'x-death', 0, 'queue' ])(msg)
+            )
+            .then(() => rabbitMqClient.ack(msg));
         });
     });
 
