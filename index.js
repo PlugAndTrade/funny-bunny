@@ -3,7 +3,6 @@ const amqp = require('amqplib'),
       Vorpal = require('vorpal'),
       R = require('ramda'),
       Promise = require('bluebird'),
-      parseMessage = require('./utils/parse-message'),
       commands = require('./commands'),
       RabbitMqClient = require('./rabbitmq');
 
@@ -58,6 +57,13 @@ rabbitMqClient.connect(config.host, config.queue);
 const execAll = (cmds, vorpal) => {
   return R.ifElse(R.complement(R.isEmpty), (cmds) => vorpal.exec(R.head(cmds)).then(() => execAll(R.tail(cmds), vorpal)), R.always(Promise.resolve()))(cmds);
 };
+
+state.vorpal.find('exit')
+  .action((args, cb) => state.rabbitMqClient
+      .disconnect()
+      .then(() => process.exit(0))
+      .catch(() => process.exit(1))
+  );
 
 execAll(config.action, state.vorpal)
   .then(() => state.vorpal

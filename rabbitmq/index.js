@@ -1,5 +1,5 @@
 const amqp = require('amqplib'),
-      parseMessage = require('../utils/parse-message'),
+      parseMessage = require('./parse-message'),
       R = require('ramda');
 
 const skipMessages = (chan, count) => {
@@ -19,14 +19,9 @@ class RabbitMqClient {
     this.queue = queue;
 
     this.connection = amqp.connect(this.host)
-      .then(conn => {
-        conn.on('close', () => console.log('connection closed'));
-        return conn;
-      })
       .then((conn) => conn.createChannel()
         .then(chan => {
           chan.on('close', () => {
-            console.log('channel closed');
             conn.close();
           });
           return chan.checkQueue(this.queue).then(() => chan);
@@ -36,8 +31,14 @@ class RabbitMqClient {
   }
 
   disconnect() {
-    return this.connection
-      .then(chan => chan.close());
+    return new Promise((resolve, reject) => {
+      this.connection
+      .then(chan => {
+        chan.connection.once('close', resolve);
+        chan.connection.once('error', reject);
+        chan.close()
+      });
+    });
   }
 
   skipMessages(count) {
