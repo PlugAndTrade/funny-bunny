@@ -1,5 +1,6 @@
 const amqp = require('amqplib'),
-      parseMessage = require('./parse-message'),
+      messageCoding = require('./message-coding'),
+      messageSerializing = require('./message-serializing'),
       R = require('ramda');
 
 const skipMessages = (chan, count) => {
@@ -49,7 +50,7 @@ class RabbitMqClient {
   nextMessage() {
     this.message = this.connection
       .then(chan => chan.get(this.queue))
-      .then(R.when(R.complement(R.isNil), parseMessage));
+      .then(R.when(R.complement(R.isNil), R.pipe(messageCoding.decode, messageSerializing.deserialize)));
 
     return this.message;
   }
