@@ -77,6 +77,10 @@ class RabbitMqClient {
     return this.message;
   }
 
+  setMessage(msg) {
+    this.message = Promise.resolve(msg);
+  }
+
   ack(msg) {
     return this.connection
       .then(chan => chan.ack(msg));

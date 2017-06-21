@@ -1,4 +1,7 @@
 const prettyJSON = require('../utils/prettyJSON'),
+      Promise = require('bluebird'),
+      fs = Promise.promisifyAll(require('fs')),
+      child_process = require('child_process'),
       R = require('ramda');
 
 module.exports = ({ rabbitMqClient, vorpal }) => {
@@ -61,6 +64,34 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
             )
             .then(() => rabbitMqClient.ack(msg));
         });
+    });
+
+  vorpal
+    .command('edit [editor]')
+    .description('Edit current message')
+    .action((args, cb) => {
+      let editor = args.editor || process.env.EDITOR || 'vi';
+
+      return rabbitMqClient
+        .getMessage()
+        .then(msg => {
+          let messageId = msg.properties.messageId || 'nomessageid';
+          let fileName = `funny-bunny-tempedit-${messageId}.json`;
+
+          return fs.writeFileAsync(fileName, prettyJSON(msg))
+            .then(() => {
+              return new Promise((resolve, reject) => {
+                let proc = child_process.spawn(editor, [ fileName ], { stdio: 'inherit' });
+                proc.on('exit', (code, signal) => code === 0 ? resolve() : reject(code));
+                proc.on('error', reject);
+              });
+            })
+            .then(() => fs.readFileAsync(fileName))
+            .then(buf => {
+              rabbitMqClient.setMessage(JSON.parse(buf.toString()));
+              return fs.unlinkAsync(fileName);
+            });
+        })
     });
 
   return { rabbitMqClient, vorpal };
