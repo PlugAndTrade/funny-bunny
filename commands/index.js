@@ -21,12 +21,21 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
    });
 
   vorpal
-    .command('print')
+    .command('print [id]')
     .description('Print current message')
     .action((args, cb) => {
       return rabbitMqClient
-        .getMessage()
+        .getMessage(args.id)
         .then(R.pipe(prettyJSON, console.log));
+    });
+
+  vorpal
+    .command('list')
+    .description('List all messages')
+    .action((args, cb) => {
+      return rabbitMqClient
+        .getMessages()
+        .then(R.pipe(R.map(R.pipe(R.pick([ 'id', 'queue' ]), prettyJSON)), R.values, R.join('\n'), console.log));
     });
 
   vorpal
@@ -47,11 +56,11 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
     });
 
   vorpal
-    .command('retry')
+    .command('retry [id]')
     .description('Retry current message')
     .action((args, cb) => {
       return rabbitMqClient
-        .getMessage()
+        .getMessage(args.id)
         .then(msg => {
           if (R.complement(R.pathSatisfies(R.has('x-death'), [ 'properties', 'headers' ]))(msg)) {
             console.log('Not dead letter');
@@ -68,14 +77,14 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
     });
 
   vorpal
-    .command('edit')
+    .command('edit [id]')
     .option('-e, --editor <editor>', 'Your master editor')
     .description('Edit current message')
     .action((args, cb) => {
       let editor = R.pathOr(process.env.EDITOR || 'vi', [ 'options', 'editor' ], args);
 
       return rabbitMqClient
-        .getMessage()
+        .getMessage(args.id)
         .then(msg => {
           let messageId = msg.properties.messageId || 'nomessageid';
           let fileName = `funny-bunny-tempedit-${messageId}.json`;
@@ -90,7 +99,7 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
             })
             .then(() => fs.readFileAsync(fileName))
             .then(buf => {
-              rabbitMqClient.setMessage(JSON.parse(buf.toString()));
+              rabbitMqClient.addMessage(JSON.parse(buf.toString()));
               return fs.unlinkAsync(fileName);
             });
         })

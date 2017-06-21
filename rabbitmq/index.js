@@ -1,4 +1,5 @@
 const amqp = require('amqplib'),
+      Promise = require('bluebird'),
       messageCoding = require('./message-coding'),
       messageSerializing = require('./message-serializing'),
       R = require('ramda');
@@ -41,6 +42,9 @@ class RabbitMqClient {
           return chan.checkQueue(this.queue).then(() => chan);
         })
       );
+
+    this.messages = {};
+    this.currentMessageId = -1;
     return this;
   }
 
@@ -61,11 +65,16 @@ class RabbitMqClient {
   }
 
   nextMessage() {
-    this.message = this.connection
+    return this.connection
       .then(chan => chan.get(this.queue))
-      .then(R.when(R.complement(R.isNil), R.pipe(messageCoding.decode, messageSerializing.deserialize)));
-
-    return this.message;
+      .then(R.when(R.complement(R.isNil), R.pipe(messageCoding.decode, messageSerializing.deserialize)))
+      .then(message => {
+        if (message) {
+          let id = ++this.currentMessageId;
+          this.messages[id] = { id, queue: this.queue, host: this.host, message };
+        }
+        return message;
+      });
   }
 
   enqueueMessage(msg, queue) {
@@ -73,12 +82,23 @@ class RabbitMqClient {
       .then(chan => enqueuePromised(chan, queue, R.pipe(messageSerializing.serialize, messageCoding.encode)(msg.content), msg.properties));
   }
 
-  getMessage() {
-    return this.message;
+  getMessage(id) {
+    return R.pipe(
+      R.defaultTo(this.currentMessageId),
+      R.prop(R.__, this.messages),
+      R.prop('message'),
+      Promise.resolve
+    )(id);
   }
 
-  setMessage(msg) {
-    this.message = Promise.resolve(msg);
+  getMessages() {
+    return Promise.resolve(this.messages);
+  }
+
+  addMessage(message) {
+    let id = ++this.currentMessageId;
+    this.messages[id] = { id, queue: '', host: '', message };
+    return Promise.resolve(this.messages[id]);
   }
 
   ack(msg) {
