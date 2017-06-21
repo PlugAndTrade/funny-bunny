@@ -67,6 +67,6 @@ state.vorpal.find('exit')
 
 execAll(config.action, state.vorpal)
   .then(() => state.vorpal
-    .delimiter('rabbit')
+    .delimiter('bunny')
     .show()
   );
