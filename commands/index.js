@@ -30,8 +30,9 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
     });
 
   vorpal
-    .command('skip [count]')
-    .description('Skip the next [count] messages')
+    .command('skip')
+    .option('-c, --count <count>', 'Number of messages to skip')
+    .description('Skip messages')
     .action((args, cb) => {
       return rabbitMqClient
         .skipMessages(args.count || 1)
@@ -67,10 +68,11 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
     });
 
   vorpal
-    .command('edit [editor]')
+    .command('edit')
+    .option('-e, --editor <editor>', 'Your master editor')
     .description('Edit current message')
     .action((args, cb) => {
-      let editor = args.editor || process.env.EDITOR || 'vi';
+      let editor = R.pathOr(process.env.EDITOR || 'vi', [ 'options', 'editor' ], args);
 
       return rabbitMqClient
         .getMessage()
