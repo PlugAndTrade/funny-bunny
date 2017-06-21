@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const amqp = require('amqplib'),
       meow = require('meow'),
       Vorpal = require('vorpal'),

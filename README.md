@@ -2,7 +2,14 @@
 Interactive RabbitMQ queue inspector.
 
 ## Getting started
-Run `node index.js --help`.
+
+### Installation
+Install globally with `npm install -g funny-bunny` or locally with `npm install funny-bunny`.
+
+### Running
+Global installation: `funny-bunny --help`.
+
+Local installation: `./node_modules/.bin/funny-bunny --help`.
 
 ## Commands
 

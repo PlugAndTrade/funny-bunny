@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "RabbitMQ queue inspection",
   "main": "index.js",
+  "bin":{
+    "funny-bunny": "./index.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
