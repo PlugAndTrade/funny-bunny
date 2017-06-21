@@ -86,8 +86,10 @@ class RabbitMqClient {
     return R.pipe(
       R.defaultTo(this.currentMessageId),
       R.prop(R.__, this.messages),
-      R.prop('message'),
-      Promise.resolve
+      R.ifElse(R.isNil, Promise.reject, R.pipe(
+        R.prop('message'),
+        Promise.resolve
+      ))
     )(id);
   }
 

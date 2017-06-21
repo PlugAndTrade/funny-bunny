@@ -56,6 +56,24 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
     });
 
   vorpal
+    .command('enqueue <queue> [id]')
+    .description('Enqueue a message on specified queue')
+    .action((args, cb) => {
+      return rabbitMqClient
+        .getMessage(args.id)
+        .then(msg => rabbitMqClient.enqueueMessage(msg, args.queue));
+    });
+
+  vorpal
+    .command('ack [id]')
+    .description('Ack message, dequeues it')
+    .action((args, cb) => {
+      return rabbitMqClient
+        .getMessage(args.id)
+        .then(msg => rabbitMqClient.ack(msg));
+    });
+
+  vorpal
     .command('retry [id]')
     .description('Retry current message')
     .action((args, cb) => {
