@@ -79,7 +79,9 @@ class RabbitMqClient {
 
   enqueueMessage(msg, queue) {
     return this.connection
-      .then(chan => enqueuePromised(chan, queue, R.pipe(messageSerializing.serialize, messageCoding.encode)(msg.content), msg.properties));
+      .then(chan => {
+        return enqueuePromised(chan, queue, R.pipe(messageSerializing.serialize, messageCoding.encode, R.prop('content'))(msg), msg.properties)
+      });
   }
 
   getMessage(id) {
