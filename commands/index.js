@@ -44,7 +44,7 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
     .description('Skip messages')
     .action((args, cb) => {
       return rabbitMqClient
-        .skipMessages(args.count || 1)
+        .skipMessages(args.options.count || 1)
         .then(() => rabbitMqClient.nextMessage())
         .then(msg => {
           if (msg) {
