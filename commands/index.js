@@ -123,5 +123,15 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
         })
     });
 
+  vorpal
+    .command('load <path>')
+    .description('Load a JSON file as a message')
+    .action((args, cb) => {
+      return fs.readFileAsync(args.path)
+        .then(buf => {
+          rabbitMqClient.addMessage(JSON.parse(buf.toString()));
+        });
+    });
+
   return { rabbitMqClient, vorpal };
 };
