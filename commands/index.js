@@ -30,6 +30,25 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
     });
 
   vorpal
+    .command('props [id]')
+    .option('-n, --name <name>', 'Print only specified property')
+    .description('Print message properties')
+    .action((args, cb) => {
+      return rabbitMqClient
+        .getMessage(args.id)
+        .then(R.pipe(args.options.name ? R.path([ 'properties', args.options.name ]) : R.prop('properties'), prettyJSON, console.log));
+    });
+
+  vorpal
+    .command('headers [id]')
+    .description('Print message headers')
+    .action((args, cb) => {
+      return rabbitMqClient
+        .getMessage(args.id)
+        .then(R.pipe(R.path([ 'properties', 'headers' ]), prettyJSON, console.log));
+    });
+
+  vorpal
     .command('list')
     .description('List all messages')
     .action((args, cb) => {
