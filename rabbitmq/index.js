@@ -67,7 +67,7 @@ class RabbitMqClient {
   nextMessage() {
     return this.connection
       .then(chan => chan.get(this.queue))
-      .then(R.when(R.complement(R.isNil), R.pipe(messageCoding.decode, messageSerializing.deserialize)))
+      .then(R.when(R.identity, R.pipe(messageCoding.decode, messageSerializing.deserialize)))
       .then(message => {
         if (message) {
           let id = ++this.currentMessageId;
