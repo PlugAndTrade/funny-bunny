@@ -56,9 +56,9 @@ console.log(`Using options: ${JSON.stringify(config, null, 2)}`);
 
 rabbitMqClient.connect(config.host, config.queue);
 
-const execAll = (cmds, vorpal) => {
-  return R.ifElse(R.complement(R.isEmpty), (cmds) => vorpal.exec(R.head(cmds)).then(() => execAll(R.tail(cmds), vorpal)), R.always(Promise.resolve()))(cmds);
-};
+const execAll = (cmds, vorpal) => R.isEmpty(cmds)
+  ? Promise.resolve()
+  : vorpal.exec(R.head(cmds)).then(() => execAll(R.tail(cmds), vorpal));
 
 state.vorpal.find('exit')
   .action((args, cb) => state.rabbitMqClient
