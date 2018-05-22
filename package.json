@@ -9,7 +9,12 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "homepage": "https://github.com/PlugAndTrade/funny-bunny",
   "author": "Oscar Olsson, oscar@plug-n-trade.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PlugAndTrade/funny-bunny.git"
+  },
   "license": "ISC",
   "dependencies": {
     "amqplib": "^0.5.1",
