@@ -94,23 +94,38 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
 
   vorpal
     .command('retry [id]')
+    .option('-n, --next <count>', 'Get next message(s) from queue and retry it(them)')
     .description('Retry current message')
     .action((args, cb) => {
-      return rabbitMqClient
-        .getMessage(args.id)
-        .then(msg => {
-          if (R.complement(R.pathSatisfies(R.has('x-death'), [ 'properties', 'headers' ]))(msg)) {
-            console.log('Not dead letter');
-            return Promise.resolve();
-          }
+      const retry = (msg) => {
+        if (!msg) {
+          console.log("No messages in queue");
+          return Promise.reject();
+        }
 
-          return rabbitMqClient
-            .enqueueMessage(
-              msg,
-              R.path([ 'properties', 'headers', 'x-death', 0, 'queue' ])(msg)
-            )
-            .then(() => rabbitMqClient.ack(msg));
-        });
+        if (R.complement(R.pathSatisfies(R.has('x-death'), [ 'properties', 'headers' ]))(msg)) {
+          console.log('Not dead letter');
+          return Promise.reject();
+        }
+
+        return rabbitMqClient
+          .enqueueMessage(
+            msg,
+            R.path([ 'properties', 'headers', 'x-death', 0, 'queue' ])(msg)
+          )
+          .then(() => rabbitMqClient.ack(msg))
+          .then(() => vorpal.log(`Retried ${msg.fields.deliveryTag}`));
+      };
+
+      if (args.options.next > 0) {
+        return R.reduce(
+          (promise) => promise.then(() => rabbitMqClient.nextMessage().then(retry)),
+          Promise.resolve(),
+          R.repeat(0, args.options.next)
+        );
+      } else {
+        return rabbitMqClient.getMessage(args.id).then(retry);
+      }
     });
 
   vorpal
@@ -151,6 +166,5 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
           rabbitMqClient.addMessage(JSON.parse(buf.toString()));
         });
     });
-
   return { rabbitMqClient, vorpal };
 };
