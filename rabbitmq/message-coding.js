@@ -11,7 +11,7 @@ const decode = R.cond([
 
 const encode = R.cond([
   [ R.pathSatisfies(R.equals('gzip'), [ 'properties', 'headers', 'Content-Encoding' ]), R.over(R.lensProp('content'), R.pipe(R.curryN(1, Buffer.from), gzip)) ],
-  [ R.T, Buffer.from ]
+  [ R.T, R.over(R.lensProp('content'), R.curryN(1, Buffer.from)) ]
 ]);
 
 module.exports = { decode, encode };
