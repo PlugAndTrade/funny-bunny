@@ -129,6 +129,16 @@ module.exports = ({ rabbitMqClient, vorpal }) => {
     });
 
   vorpal
+    .command('save <path> [id]')
+    .description('Save current message to disk')
+    .action((args, cb) => {
+      return rabbitMqClient
+        .getMessage(args.id)
+        .then(prettyJSON)
+        .then(msg => fs.writeFileAsync(args.path, msg));
+    });
+
+  vorpal
     .command('edit [id]')
     .option('-e, --editor <editor>', 'Your master editor')
     .description('Edit current message')
