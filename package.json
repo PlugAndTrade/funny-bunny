@@ -1,6 +1,6 @@
 {
   "name": "funny-bunny",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "RabbitMQ queue inspection",
   "main": "index.js",
   "bin": {
@@ -17,8 +17,8 @@
   },
   "license": "ISC",
   "dependencies": {
-    "amqplib": "^0.5.1",
-    "bluebird": "^3.5.0",
+    "amqplib": "^0.5.2",
+    "bluebird": "^3.5.2",
     "meow": "^3.7.0",
     "ramda": "^0.23.0",
     "vorpal": "^1.12.0"
