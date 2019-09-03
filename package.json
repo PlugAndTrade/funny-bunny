@@ -4,7 +4,8 @@
   "description": "RabbitMQ queue inspection",
   "main": "index.js",
   "bin": {
-    "funny-bunny": "./index.js"
+    "funny-bunny": "./index.js",
+    "funny-bunny-retry": "./bin/retry.js"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
