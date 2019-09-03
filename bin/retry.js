@@ -10,7 +10,7 @@ const cli = meow(`
     Retries all mesasges in a dlq
 
     Usage
-      funny-bunny-retry --host URL --queue QUEUE_NAME
+      funny-bunny-retry --host URL --queue QUEUE_NAME --count COUNT
 
     Options
       --host URL to rabbitmq, required.
