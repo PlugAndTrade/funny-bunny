@@ -47,7 +47,7 @@ const validateOpts = R.pipe(
   R.reduce(R.concat, [])
 );
 
-let count = +cli.flags.count;
+let count = +config.count;
 let errs = validateOpts(cli.flags);
 if (R.length(errs) > 0) {
   console.error(R.join("\n", errs));
