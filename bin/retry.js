@@ -10,22 +10,31 @@ const cli = meow(`
     Retries all mesasges in a dlq
 
     Usage
-      funny-bunny-retry --host URL --queue QUEUE_NAME --count COUNT
+      funny-bunny-retry --host URL --queue QUEUE_NAME [--count COUNT] [--routing-key PATTERN]
 
     Options
       --host URL to rabbitmq, required.
       --queue The dead letter queue to look for the message in, required.
-      --count The number of messages to retry.
+      --count The maximum number of messages to fetch. Default 10
+      --routing-key Regular expresion the routing key of every message should
+                    be tested against. See
+                    https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
+                    for documentation on how to write regular expressions.
 
     Examples
       funny-bunny-retry --host amqp://localhost --queue mydeadletterqueue --count 10
+      funny-bunny-retry --host amqp://localhost --queue mydeadletterqueue --routing-key 'foo.bar.*'
 `);
 
-const config = cli.flags;
+const DEFAULT_CONFIG = {
+  count: 10
+};
+
+const config = R.merge(DEFAULT_CONFIG, cli.flags);
 
 const rabbitMqClient = new RabbitMqClient();
 
-const REQUIRED_OPTIONS = [ 'host', 'queue', 'count' ];
+const REQUIRED_OPTIONS = [ 'host', 'queue' ];
 const validateRequired = opts => R.pipe(
   R.reject(R.has(R.__, opts)),
   R.map(o => `Missing '${o}'`)
@@ -57,17 +66,17 @@ const retry = (msg) => {
       R.path([ 'properties', 'headers', 'x-death', 0, 'queue' ])(msg)
     )
     .then(() => rabbitMqClient.ack(msg))
-    .then(() => console.log(`Retried ${msg.properties.messageId}`))
+    .then(() => console.log(`Retried ${msg.properties.messageId || msg.fields.deliveryTag}`))
     .then(R.T);
 };
 
-const logMessage = msg => {
-    if (msg) {
-      console.log(msg);
-    } else {
-      console.log('Queue empty');
-    }
-  return msg;
+const createFilter = ({ routingKey }) => {
+  if (routingKey) {
+    const regex = new RegExp(routingKey);
+    return msg => regex.test(msg.fields.routingKey);
+  }
+
+  return R.T;
 };
 
 const forEachMessage = (client, fn, maxCount) => {
@@ -88,8 +97,10 @@ const forEachMessage = (client, fn, maxCount) => {
     : Promise.resolve({});
 };
 
+const msgFilter = createFilter(config);
+
 rabbitMqClient.connect(config.host, config.queue);
-forEachMessage(rabbitMqClient, retry, count)
+forEachMessage(rabbitMqClient, R.when(msgFilter, retry), count)
   .then(() => console.log("DONE"))
   .then(() => rabbitMqClient.disconnect())
   .catch(err => console.error(err));
